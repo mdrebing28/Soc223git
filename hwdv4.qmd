@@ -1,0 +1,157 @@
+---
+title: "DV 4 HW"
+author: "Maddie Drebing"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## Chapter 4 - DV
+
+## Question 1
+
+```{r}
+library(tidyverse)
+tv_ratings <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/tv_ratings.csv")
+glimpse(tv_ratings)
+```
+
+```{r}
+tv_long <- tv_ratings %>% 
+  group_by(title) %>% 
+  summarise(num_seasons = n()) %>% 
+  ungroup() %>% 
+  left_join(tv_ratings, by = "title") 
+
+tv_long <- tv_long %>% 
+  filter(num_seasons >= 5)
+```
+
+```{r}
+ggplot(data = tv_long,
+       mapping = aes(x = av_rating,
+                     y = seasonNumber,
+                     group = title)) +
+  geom_line() 
+```
+
+the less seasons the better rating. less than 5 = typically an 8+ rating.
+
+## Question 2
+
+```{r}
+tv_long <- tv_ratings |>
+  group_by(title) |>
+  mutate(nseasons = max(seasonNumber)) |>
+  filter(nseasons >= 5) |>
+  ungroup()
+
+ggplot(data = tv_long,
+       mapping = aes(x = av_rating,
+                     y = seasonNumber,
+                     group = title)) +
+  geom_line(alpah = .2)+
+  facet_wrap(~genres) +
+  theme_minimal()
+```
+
+Actions, crime, and drama have the most seasons.
+
+As the show gets into later seasons the ratings increase.
+
+the show that plummeted was "Are you Afraid of the Dark?"
+
+## Question 3
+
+```{r}
+tv_ratings |>
+  filter(av_rating >= 9) |>
+  ggplot(tv_ratings,
+         mapping = aes(x = genres)) +
+  geom_bar() +
+  coord_flip()
+```
+
+The coord_flip flips the x and y axis.
+
+Drama has the most rated shows.
+
+## Question 4
+
+```{r}
+comedies_dramas <- tv_ratings %>% 
+  mutate(is_comedy = if_else(str_detect(genres, "Comedy"), 
+                             1, 
+                             0)) %>% # If it contains the word comedy then 1, else 0
+  filter(is_comedy == 1 | genres == "Drama") %>% # Keep comedies and dramas
+  mutate(genres = if_else(genres == "Drama", # Make it so that we only have those two genres
+                          "Drama", 
+                          "Comedy"))
+
+glimpse(comedies_dramas)
+```
+
+```{r}
+comedies_dramas |>
+  ggplot(comedies_dramas,
+         mapping = aes(x = av_rating,
+                       fill = genres)) +
+  geom_density(alpha = .4)
+```
+
+There are more higher rated comedies than there are dramas. Your prediction was correct.
+
+## Question 5
+
+```{r}
+comedies_dramas |>
+  ggplot(comedies_dramas,
+         mapping = aes(x = av_rating,
+                       fill = genres)) +
+  geom_histogram()
+```
+
+```{r}
+comedies_dramas |>
+  ggplot(comedies_dramas,
+         mapping = aes(x = av_rating,
+                       fill = genres)) +
+  geom_freqpoly()
+```
+
+The geom_freqpoly() looks like it gives you the most direct numbers. I think you can pull the most accurate information from the geom_freqpoly().
+
+## Question 6
+
+```{r}
+comedies_dramas |>
+  ggplot(comedies_dramas,
+         mapping = aes(x = av_rating,
+                       y = share)) +
+  geom_bin_2d()
+```
+
+I see that majority of the ratings and shares are at 8 and just above 0.
+
+in comparison to a scatter plot it shows similar information on where the points are clustered but it does not show where the most points are when overlapping.
+
+```{r}
+comedies_dramas |>
+  ggplot(comedies_dramas,
+         mapping = aes(x = av_rating,
+                       y = share)) +
+  geom_point()
+```
+
+```{r}
+comedies_dramas |>
+  ggplot(comedies_dramas,
+         mapping = aes(x = av_rating,
+                       y = share,
+                       fill = genres)) +
+  geom_bin_2d(alpha = .4)
+```
+
+I notice drama has a lot less shares and worse ratings compared to comedy that has more shares and higher ratings.
+
+The outlier is the drama Dekalog.
