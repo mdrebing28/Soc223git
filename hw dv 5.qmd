@@ -1,0 +1,156 @@
+---
+title: "DV 5 HW"
+author: "Maddie Drebing"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## DV Chapter 5
+
+```{r}
+library(tidyverse)
+# Read in the data 
+wncaa <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/wncaa.csv")
+
+# Glimpse the data 
+glimpse(wncaa)
+```
+
+## Question 1
+
+```{r}
+wncaa |>
+  filter(tourney_finish == "Champ")
+
+```
+
+```{r}
+wncaa_new <- wncaa |>
+   filter(tourney_finish == "Champ") |>
+  group_by(school) |>
+  summarize(N = n()) |>
+  mutate(freq = N / sum(N))
+```
+
+```{r}
+ggplot(wncaa_new, 
+       mapping = aes(x = school,
+                     y = freq)) + 
+  geom_bar(stat = "identity") +
+coord_flip()
+```
+
+I notice there are two or three power school and there are those who are average. UConn and Tennessee have won the most.
+
+## Question 2
+
+```{r}
+champs <- wncaa |>
+  filter(tourney_finish == "Champ")
+
+champ_names <- unique(champs$school) 
+
+```
+
+```{r}
+winners <- wncaa %>% 
+  filter(school %in% champ_names)
+```
+
+```{r}
+winners <- winners %>% 
+  mutate(mean_seed = mean(seed),
+         .by = school)
+
+seed_plot <- ggplot(winners, aes(x = reorder(school, -mean_seed),
+                                 y = seed)) + 
+  geom_boxplot(outlier.shape = NA) + 
+  geom_jitter(alpha = 0.2) +
+  coord_flip() +
+  labs(title = "Seedings for Top All-Time WNCAA Teams",
+       x = "School",
+       y = "Seed")
+seed_plot
+```
+
+While the data is difficult to read, it accurately shows UConn and Tennessee being the two biggest winners.
+
+```{r}
+seed_plot_violin <- ggplot(winners, aes(x = reorder(school, mean_seed),
+                                 y = seed)) + 
+  geom_violin() + 
+  geom_jitter(alpha = 0.2) +
+  coord_flip() +
+  labs(title = "Seeds for Top All-Time WNCAA Teams",
+       x = "School",
+       y = "Seed")
+seed_plot_violin
+```
+
+I think it is better for showing the highest and lowest seeding for each school, but it is hard to read.
+
+## Question 3
+
+```{r}
+seed_plot_point <- ggplot(winners, aes(x = reorder(school, -mean_seed),
+                                 y = seed)) + 
+  geom_point(alpha=0.2) +
+  coord_flip() +
+  labs(title = "Seeding for Top All-Time WNCAA Teams",
+       x = "School",
+       y = "Seed")
+seed_plot_point
+```
+
+It is hard to take away accurate data from this graph. You cannot tell how many times a school was the number 1 seed.
+
+## Question 4
+
+```{r}
+winners_mean_sd <- winners %>% 
+  group_by(school) %>% 
+  summarise(across(where(is.numeric),
+                   list(mean = mean,
+                        sd = sd)))
+
+win_percent_plot <- ggplot(winners_mean_sd, 
+                           aes(x = reorder(school, -seed_mean),
+                                 y = reg_percent_mean)) + 
+  geom_point() +
+  coord_flip() +
+  labs(title = "Average Win Percentage by School",
+       x = "School",
+       y = "Avg. Win %")
+win_percent_plot
+```
+
+The data shows that UConn has been a standing powerhouse for a long time. It shows how Tennessee, while also being a very successful team, had losing seasons that dropped their avg. Texas A&M had the lowest win percentage at %73.98.
+
+```{r}
+win_percent_plot_2 <- ggplot(winners_mean_sd, 
+                           aes(x = reorder(school, -seed_mean),
+                                 y = reg_percent_mean)) + 
+  geom_pointrange(mapping = aes(ymin = reg_percent_mean - reg_percent_sd, ymax = reg_percent_mean + reg_percent_sd)) +
+  coord_flip() +
+  labs(title = "Average Win Percentage by School",
+       x = "School",
+       y = "Avg. Win %")
+win_percent_plot_2
+```
+
+The school with the narrowest interval is Texas A&M. This means their avg win percentage has stayed closest to the all time mean. They have been consistently mid.
+
+```{r}
+win_percent_plot_3 <- ggplot(winners_mean_sd, 
+                           aes(x = reorder(school, -seed_mean),
+                                 y = reg_percent_mean)) + 
+  geom_linerange(mapping = aes(ymin = reg_percent_mean - reg_percent_sd, ymax = reg_percent_mean + reg_percent_sd)) +
+  coord_flip() +
+  labs(title = "Average Win Percentage by School",
+       x = "School",
+       y = "Avg. Win %")
+win_percent_plot_3
+```
+
+I think adding geom_point() makes it easier to pin point the median and quickly read the graph.

@@ -1,0 +1,99 @@
+---
+title: "dv5 demo"
+format: html
+embed-resources: true
+---
+
+---
+
+editor: visual
+---
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+theme_set(theme_light())
+```
+
+```{r}
+data("flights")
+flights_jan_lga <- flights |>
+  filter((month == 1 & origin == "LGA"))
+
+glimpse(flights_jan_lga)
+```
+
+```{r}
+flights_jan_lga |>
+  group_by(carrier) |> 
+  summarize(avg_flight = mean(air_time, na.rm = TRUE))
+```
+
+```{r}
+flights_jan_lga |> 
+  ggplot(aes(x = carrier,
+             y = air_time)) +
+  geom_jitter(alpha = .1) +
+  coord_flip()
+```
+
+```{r}
+flights_jan_lga <- flights_jan_lga |> 
+  group_by(carrier) |> 
+  mutate(mean_air_time = mean(air_time, na.rm = TRUE)) |> 
+  ungroup()
+```
+
+```{r}
+flights_jan_lga |> 
+  select(carrier, flight, dest, air_time, mean_air_time ) |> 
+  head(n = 12)
+```
+
+```{r}
+flights_jan_lga <- flights_jan_lga |> 
+  mutate(mean_air_time2 = mean(air_time, na.rm = TRUE),
+         .by = carrier)
+```
+
+```{r}
+flights_jan_lga |> 
+  select(carrier, flight, dest, air_time, mean_air_time, mean_air_time2 ) |> 
+  head(n = 12)
+```
+
+```{r}
+flights_jan_lga |> 
+  ggplot(aes(x = reorder(carrier,
+                         mean_air_time),
+             y = air_time)) +
+  geom_jitter(alpha = .1) +
+  labs(x = "Carrier",
+       y = "Air time (minutes)",
+       caption = "All January 2013 flights from LGA") +
+  coord_flip()
+```
+
+```{r}
+fjl_summary <- flights_jan_lga |>
+  group_by(carrier) |> 
+  drop_na(air_time, dep_delay) |> 
+  summarize(air_time_mean = mean(air_time),
+            air_time_sd = sd(air_time),
+            dep_delay_mean = mean(dep_delay),
+            dep_delay_sd = sd(dep_delay))
+
+fjl_summary
+```
+
+```{r}
+fjl_summary2 <- flights_jan_lga |> 
+  group_by(carrier) |> 
+  drop_na(air_time, dep_delay) |> 
+  summarize(across(c(air_time,
+                     dep_delay),
+                   .fns = list(mean = mean,
+                               sd = sd)))
+
+fjl_summary2
+```
