@@ -1,0 +1,139 @@
+---
+title: "md05 demo"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## MD 05 Demo
+
+```{r}
+#| message: false
+library(tidyverse)
+library(moderndive)
+library(patchwork)
+theme_set(theme_light())
+
+```
+
+```{r}
+data(evals)
+glimpse(evals)
+```
+
+```{r}
+d <- evals |>
+  rename(bty = bty_avg,    # just shorter to type
+         sex = gender)     # actually what they have
+
+glimpse(d)
+```
+
+```{r}
+head(d)
+```
+
+```{r}
+library(skimr)
+skim(d)
+```
+
+```{r}
+summary(d)
+```
+
+```{r}
+ggplot(d,
+       aes(x = score)) +
+  geom_histogram(boundary = 4,
+                 binwidth = .25,
+                 color = "white")
+
+ggplot(d,
+       aes(x = bty)) +
+  geom_histogram(boundary = 4,
+                 binwidth = .5,
+                 color = "white") +
+  scale_x_continuous(breaks = 2:9)
+```
+
+```{r}
+ggplot(d,
+       aes(x = bty,
+           y = score)) +
+  geom_jitter(alpha = .3)
+```
+
+```{r}
+d |> get_correlation(score ~ bty)     # MD wrapper function (tibble)
+d |> select(score, bty) |> cor()      # base R version (matrix)
+```
+
+```{r}
+mod1 <- lm(score ~ bty,
+           data = d)
+
+get_regression_table(mod1)
+```
+
+```{r}
+ggplot(d,
+       aes(x = bty,
+           y = score)) +
+  geom_jitter(alpha = .3) +
+  geom_smooth(method = "lm",     # does this look familiar?
+              se = FALSE)        # don't want to use "standard errors" for now
+```
+
+```{r, echo=FALSE}
+ggplot(d,
+       aes(x = bty,
+           y = score)) +
+  geom_jitter(alpha = .3) +
+  geom_smooth(method = "lm",
+              se = FALSE,
+              fullrange = TRUE) +
+  scale_x_continuous(limits = c(0,8.5)) +
+  geom_vline(xintercept = 0,
+             color = "red",
+             linetype = "dotted")
+```
+
+```{r}
+p <- ggplot(d,
+       aes(x = bty,
+           y = score)) +
+  geom_jitter(alpha = .3)
+
+p + geom_abline(intercept = 3.88,
+                slope = .067,
+                color = "blue",
+                size = 1.5)
+```
+
+```{r}
+ggplot(d,
+       aes(x = score,
+           y = sex)) +
+  geom_jitter(alpha = .3,
+              height = .2)
+```
+
+```{r}
+ggplot(d,
+       aes(x = score,
+           y = sex)) +
+  geom_boxplot(coef = 0,
+               outlier.alpha = 0,
+               width = .5) +
+  geom_jitter(alpha = .3,
+              height = .2) 
+
+```
+
+```{r}
+mod2 <- lm(score ~ sex,
+           data = d) 
+
+broom::tidy(mod2)     # instead of get_regression_table()
+```

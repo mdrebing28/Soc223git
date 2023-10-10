@@ -1,0 +1,154 @@
+---
+title: "Chapter 1-3"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## Chapter 1-3
+
+## Question 1
+
+Those who exercise a lot will have a lower BMI
+
+```{r}
+library(tidyverse)
+# Read in the data 
+exercise_data <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/visualize_data.csv")
+glimpse(exercise_data)
+```
+
+```{r}
+cor(exercise_data$Exercise, exercise_data$BMI)
+```
+
+```{r}
+ggplot(data = exercise_data,
+       mapping = aes(x = "Exercise", 
+      y = "BMI")) +
+  geom_point()
+```
+
+one point in the middle of the plot.
+
+## Question 2
+
+```{r}
+library(causact)
+glimpse(corruptDF)
+```
+
+the CPI2017 is The Corruption Perceptions Index score for 2017. A county's score is idicates the percieved lever of corruption on a scale from 0-100.
+
+HDI2017 is The human development index score for 2017. it measures achievement in basic dimensions of human development across countries. Simple unweighted avg of a nation legevity.
+
+## Question 3
+
+```{r}
+ggplot(data = corruptDF,
+       mapping = aes(x = HDI2017,
+                     y = CPI2017)) + 
+  geom_point(alpha = .2)
+```
+
+The relationship between the HDI and CPI is the higher the HDI the greater the CPI
+
+```{r}
+colnames(exercise_data)[colnames(exercise_data) == "...1"] = "HDI"
+colnames(exercise_data)[colnames(exercise_data) == "...2"] = "CPI"
+```
+
+## Question 4
+
+```{r}
+ggplot(data = corruptDF,
+       mapping = aes(x = HDI2017,
+                     y = CPI2017)) +
+  geom_point() +
+  labs(x = "HDI2017",
+       y = "CPI2017", 
+       title = "Relationship between HDI2017 and CPI2017") +
+ geom_smooth(method = "gam", se = FALSE)
+```
+
+```{r}
+ggplot(data = corruptDF,
+       mapping = aes(x = HDI2017,
+                     y = CPI2017)) +
+  geom_point() +
+  labs(x = "HDI2017",
+       y = "CPI2017", 
+       title = "Relationship between HDI2017 and CPI2017") +
+ geom_smooth(method = "le", se = FALSE)
+```
+
+The gam method is more preferable and easier to read the direction of the scatter plot. It shows the relationship between the two much clearer.
+
+## Question 5
+
+```{r}
+ggplot(data = corruptDF,
+       mapping = aes(x = HDI2017,
+                     y = CPI2017, fill = region, color = region)) +
+  geom_point(color = "navy", fill = "grey", alpha = .5) + 
+  
+  labs(x = "HDI2017",
+       y = "CPI2017", 
+       title = "Relationship between HDI2017 and CPI2017") +
+ geom_smooth(method = "gam", se = FALSE)
+```
+
+```{r}
+ggplot(data = corruptDF,
+       mapping = aes(x = HDI2017,
+                     y = CPI2017, color = region)) +
+  geom_point(color = "navy", fill = "grey", alpha = .5) + 
+  
+  labs(x = "HDI2017",
+       y = "CPI2017", 
+       title = "Relationship between HDI2017 and CPI2017") +
+ geom_smooth(method = "gam", se = FALSE) +
+facet_wrap(~ region, nrow = 2)
+```
+
+In the six different regions patterns are very cluttered and hard to read. Another way to see these trends would be a scatter plot used the the facet_wrap() function.
+
+## Question 6
+
+```{r}
+ggplot(data = corruptDF,
+       mapping = aes(x = CPI2017,
+                     y = HDI2017, 
+                     fill = region, 
+                     color = region)) + 
+  labs(x = "CPI2017", y = "HDI2017", 
+       title = "Region - CPI2017 vs HDI2017") +
+  geom_point(size = 1.5, color = "navy", fill = "grey") + 
+  geom_smooth(method = "gam", se = FALSE)+ 
+  scale_x_reverse()
+```
+
+## Question 7
+
+```{r}
+ggplot(data = corruptDF,
+       mapping = aes(x = CPI2017,
+                     y = HDI2017, 
+                     fill = region, 
+                     color = region)) + 
+  labs(x = "CPI2017", y = "HDI2017", 
+       title = "Relationships between CPI and HDI",
+       subtitle = "Grouped by Region",
+       caption = "The data comes from 174 observations, each observation
+       being a country, where the relationship between the HDI and CPI
+       exist.") +
+  geom_point(size = 1.5, color = "navy", fill = "grey") + 
+  geom_smooth(method = "gam", se = FALSE)+ 
+  scale_x_reverse()
+```
+
+## Question 8
+
+```{r}
+ggsave("corruption_by_region.png")
+```

@@ -1,0 +1,42 @@
+---
+title: "2023-10-10-inclass"
+author: "Maddie Drebing"
+format: html
+embed-resources: true
+editor: visual
+---
+
+```{r}
+set.seed(12345)
+# fake data
+fd <- tibble(x1 = rnorm(n = 500,
+                        mean = 500,
+                        sd = 100),
+             x2 = rnorm(n = 500,
+                        mean = 500,
+                        sd = 50))
+# wider SD
+p1 <- ggplot(fd,
+             aes(x = x1)) +
+  geom_histogram(color = "white",
+                 boundary = 500,
+                 binwidth = 25) +
+  scale_x_continuous(limits = c(200,800))
+
+# narrower SD
+p2 <- ggplot(fd,
+             aes(x = x2)) +
+  geom_histogram(color = "white",
+                 boundary = 500,
+                 binwidth = 25) +
+  scale_x_continuous(limits = c(200,800))
+
+# put together
+p1 / p2
+```
+
+```{r}
+p1 <- lm(count ~ x1,
+         data = p1)
+get_regression_table(p1)
+```
