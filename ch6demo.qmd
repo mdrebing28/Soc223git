@@ -1,0 +1,164 @@
+---
+title: "md06 demo"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## Chapter 6 Demo
+
+```{r}
+#| message: false
+library(tidyverse)
+library(moderndive)
+library(ggthemes)
+library(patchwork)
+theme_set(theme_light())
+```
+
+```{r}
+data(evals)
+glimpse(evals)
+```
+
+```{r}
+d <- evals |>
+  rename(bty = bty_avg,
+         sex = gender)
+glimpse(d)
+```
+
+```{r}
+head(d)
+```
+
+```{r}
+mod1 <- lm(score ~ bty, 
+           data = d)
+get_regression_table(mod1)
+```
+
+```{r}
+mod1_preds <- get_regression_points(mod1)
+head(mod1_preds)
+```
+
+```{r,echo=FALSE}
+ggplot(d,
+       aes(x = bty,
+           y = score)) +
+  geom_jitter(alpha = .3) +
+  geom_smooth(method = "lm",
+              se = FALSE) +
+  labs(x = "Beauty",
+       y = "Evaluation",
+       title = "Simple regression results")
+
+```
+
+```{r,echo=FALSE}
+ggplot(mod1_preds,
+       aes(x = bty,
+           y = residual)) +
+  geom_jitter(alpha = .3) +
+  geom_hline(yintercept = 0,
+             color = "blue") +
+  labs(x = "Beauty",
+       y = "Residual",
+       title = "Simple regression residuals")
+
+```
+
+```{r}
+var_y <- d |> 
+  pull(score) |> 
+  var()
+
+var_y
+```
+
+```{r, echo=FALSE}
+ggplot(d,
+       aes(x = bty,
+           y = score)) +
+  geom_jitter(alpha = .3) +
+  geom_hline(yintercept = mean(d$score),
+             color = "blue") +
+  labs(x = "Beauty",
+       y = "Evaluation",
+       title = "Guessing the mean for everyone")
+  
+```
+
+```{r,echo=FALSE}
+ggplot(d,
+       aes(x = bty,
+           y = score)) +
+  geom_jitter(alpha = .3) +
+  geom_hline(yintercept = mean(d$score),
+             color = "blue") +
+  geom_smooth(method = "lm",
+              se = FALSE,
+              color = "red",
+              linetype = "dashed") +
+  labs(x = "Beauty",
+       y = "Evaluation",
+       title = "Mean vs. regression line")
+
+```
+
+```{r}
+var_yhat1 <- mod1_preds |> 
+  pull(residual) |> 
+  var()
+
+var_yhat1
+```
+
+```{r}
+1 - (var_yhat1 / var_y)
+```
+
+```{r}
+broom::glance(mod1)
+moderndive::get_regression_summaries(mod1)
+```
+
+```{r}
+mod2 <- lm(score ~ sex,
+           data = d)
+
+get_regression_table(mod2)
+get_regression_summaries(mod2)
+
+```
+
+```{r}
+mod3 <- lm(score ~ bty + sex,
+           data = d)
+
+get_regression_table(mod3)
+```
+
+```{r,echo=FALSE}
+ggplot(d,
+       aes(x = bty,
+           y = score,
+           group = sex,
+           color = sex)) +
+  geom_jitter(alpha = .3) +
+  geom_parallel_slopes(se = FALSE) +  # this is a modern dive thing!
+  theme(legend.position = "top")
+```
+
+```{r,echo=FALSE}
+ggplot(d,
+       aes(x = bty,
+           y = score,
+           group = sex,
+           color = sex)) +
+  geom_jitter(alpha = .3) +
+  geom_smooth(method = "lm",
+              se = FALSE) +
+  theme(legend.position = "top")
+```
