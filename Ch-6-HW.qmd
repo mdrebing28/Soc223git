@@ -1,0 +1,148 @@
+---
+title: "Ch 6 HW"
+author: "Maddie Drebing"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## Chapter 6
+
+```{r}
+library(tidyverse)
+
+theme_set(theme_light())
+
+gender_employment <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/gender_employment.csv")
+
+glimpse(gender_employment)
+```
+
+```{r}
+gender_employment%>% 
+  ggplot(aes(x = year, y = wage_percent_of_male)) +
+  geom_jitter(alpha = 0.1) + 
+  geom_smooth(method = "lm") + 
+  labs(title = "Women's earnings with respect to men's", 
+       y = "% of Men's Income", 
+       x = "Year")
+```
+
+## Question 1
+
+```{r}
+gender_employment <- gender_employment %>% 
+  mutate(major_category = as.factor(major_category), 
+         major_category = relevel(major_category, ref = "Management, Business, and Financial"))
+```
+
+```{r}
+parallel_model <- lm(wage_percent_of_male ~ year + major_category,
+                     data = gender_employment)
+broom::tidy(parallel_model)
+
+```
+
+Every year the male wage percentage increases by 0.19 of a percent.
+
+For 2016, we switch on the S variable, giving \$\$
+
+\\hat{y} = -306.7183854 + 0.1922095(2016) + 6.08(1) = 86.85597
+
+\$\$
+
+So, in 2016, we estimate Service occupations had 86.86% of male income.
+
+## Question 2
+
+```{r}
+gender_employment%>% 
+  ggplot(aes(x = year,
+             y = wage_percent_of_male,
+             group = major_category)) +
+  geom_smooth(method = "lm",
+              se = FALSE) + 
+  labs(title = "Women's earnings with respect to men's", 
+       y = "% of Men's Income", 
+       x = "Year")
+```
+
+## Question 3
+
+```{r}
+interaction_model <- lm(wage_percent_of_male ~ year*major_category,
+                        data = gender_employment)
+broom::tidy(interaction_model)
+```
+
+The estimate for Computer, engineering and science for 2016 would be:
+
+\\hat{y} = -1370.4719187 + 0.7202561(2016) + 1002.8532317(1) - 0.4946783(2016)(1) = 87.14616
+
+The model estimates that in 2016, Computer, engineering, and science jobs made 87.14% of male income. The estimate for Service in 2016 would be"
+
+\\hat{y} = -1370.4719187 + 0.7202561(2016) + 2137.6501474(1) - 1.0581075(2016)(1) = 86.06981
+
+It is estimated that Service jobs made 86.07% of male income. The difference between the two is that this requires two "switches" to be turned on when we want to model a specific industry.
+
+## Question 4
+
+If there is not a lot of data in the data set then the estimates of the interaction effects could be highly variable and not reliable.
+
+## Question 5
+
+```{r}
+simple_fit <- lm(wage_percent_of_male ~ year,
+                 data = gender_employment)
+broom::tidy(simple_fit)
+
+```
+
+for every year the wage percent of male counterparts goes up by 0.2 percentage points.
+
+```{r}
+gender_employment %>% 
+  select(year, wage_percent_of_male, percent_female) %>% 
+  cor(use = "complete.obs")
+```
+
+the diagonals are equal to one since there is a correlatin when comparing a variable to itself. The estimated wage percent of male increases by a rate of roughly 0.24 percentage points per year.
+
+```{r}
+multiple_fit <- lm(wage_percent_of_male ~ year*percent_female,
+                   data = gender_employment)
+broom::tidy(multiple_fit)
+```
+
+The amount of women who work in a na occupation is growing by 10 percentage points per year.
+
+## Question 6
+
+R squared is an something that explains how much of the variation of a dependent variable is explained by the independent variable in a model. the closer R squared is to 1 the better your predictions are.
+
+```{r}
+simple_glanced <- broom::glance(simple_fit)
+simple_glanced$r.squared
+```
+
+```{r}
+multiple_glanced <- broom::glance(multiple_fit)
+multiple_glanced$r.squared
+```
+
+R squared value is bigger for the multiple regression. In the multiple regression there is a way bigger proportion for the dependent variable that relies on my independent variables
+
+## A warning sign
+
+```{r}
+random_numbers <- rnorm(n = nrow(gender_employment), 
+                        mean = 0, 
+                        sd = 4)
+```
+
+```{r}
+gender_employment$random_noise <- random_numbers
+
+# New model 
+random_fit <- lm(wage_percent_of_male ~ year + percent_female + random_noise, data = gender_employment)
+```
