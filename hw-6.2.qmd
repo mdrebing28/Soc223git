@@ -1,0 +1,175 @@
+---
+title: "HW 6.2"
+author: "Maddie Drebing"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## Homework 6.2
+
+```{r}
+library(tidyverse)
+library(moderndive)
+theme_set(theme_minimal())
+```
+
+```{r}
+data(bikes, package = "bayesrules")
+glimpse(bikes)
+
+```
+
+## Question 0
+
+there are 500 rows
+
+each row represents the data of a ridership for a single day
+
+January 2011 - December 2012
+
+6946 rides
+
+34 MPH
+
+## Question 1
+
+```{r}
+get_correlation(rides ~ temp_feel,
+                data = bikes) %>% round(2)
+```
+
+0.58
+
+When the `temp_feel` goes up by one standard deviation, the rides should increase by 0.58 of a standard deviation.
+
+```{r}
+get_correlation(rides ~ windspeed,
+                data = bikes) %>% round(2)
+```
+
+The correlation between number of rides and what the wind speed is -0.19.
+
+This means when `windspeed` goes up by one standard deviation rides would go down by 0.19 of a standard deviation.
+
+## Question 2
+
+```{r}
+bikes <- bikes %>% 
+  mutate(wind_kph = windspeed * 1.61)
+```
+
+```{r}
+get_correlation(windspeed ~ wind_kph,
+                data = bikes)
+```
+
+The correlation between wind speed in MPH and wind speed in KPH is 1. Every KPH is 1.6x of its MPH and vice versa. It is a unit conversion.
+
+## Question 3
+
+```{r}
+mph_model <- lm(rides ~ windspeed,
+                data = bikes)
+get_regression_table(mph_model) %>% 
+  select(term, estimate)
+```
+
+```{r}
+kph_model <- lm(rides ~ wind_kph,
+                data = bikes)
+get_regression_table(kph_model) %>% 
+  select(term, estimate)
+```
+
+The intercepts of the two are the same since 0 MPH = 0 KPH.
+
+the slopes are different, they are off by 1.61.
+
+55.523/34.486 = 1.61
+
+## Question 4 
+
+$$
+rides = 4205.065 - 34.486 (20 MPH) = 3515.345
+$$
+
+3515 riders for a 20 MPH wind day
+
+$$
+rides = 4205.065 - 55.523 (20 KPH) = 3094.605
+$$
+
+3095 riders on a 20 KPH day
+
+## Question 5
+
+```{r}
+bikes <- bikes %>% 
+  mutate(temp_c = (temp_feel-32)*(5/9))
+```
+
+```{r}
+mult_model <- lm(rides ~ wind_kph + temp_c,
+                 data = bikes)
+get_regression_table(mult_model) %>% 
+  select(term, estimate)
+```
+
+For every 1ºC increase in temperature, the model expects an increase of 143 in ridership.
+
+For every 1 KPH increase in wind speed, the model expects a decrease of 20 in ridership.
+
+the intercept tells us that expected ridership on a calm day with a temperature of 0ºC would be 942.
+
+## Question 6
+
+```{r}
+pred_df <- tibble(
+  situation = 1:3,
+  temp_c = c(25, 15, 10),
+  wind_kph = c(15, 5, 40)
+)
+
+pred_df$predicted_ridership <- predict(mult_model, newdata = pred_df)
+print(pred_df)
+```
+
+there is a prediction of 4224 riders, 2991 riders, and 1581 riders for situations 1, 2, and 3.
+
+## Question 7
+
+```{r}
+bikes <- bikes %>% mutate(weekend = as.factor(weekend))
+weekend_model <- lm(rides ~ wind_kph + weekend + temp_c,
+                    data = bikes)
+get_regression_table(weekend_model) %>%
+  select(term, estimate)
+```
+
+From the data we can see that the coefficient values for our `weekend_model`. The intercept `wind_kph` and `temp_c` coefficients fuctions in the same way in the data above. The coefficient for `weekend` says that on a weekend the model expects ridership to be 714 riders fewer than a weekday
+
+## Question 8
+
+```{r}
+library(ggeffects)
+predictions <- ggpredict(weekend_model,
+                         terms = c("weekend"),
+                         ci_level = NA) # don't think about confidence intervals yet (soon!)
+predictions
+```
+
+While the temperature and wind speed stay at the average the expected ridership for a weekend is 2970 riders. On a weekday the expected ridership is 3683 riders.
+
+## Question 9
+
+```{r}
+bikerides <- predict(weekend_model)
+residuals <- bikes$rides - bikerides
+broom::tidy(residuals)
+residuals
+```
+
+the biggest residual happened on day 439 with an absolute value of 3409.346.
+
+the model was wrong. In the original data it is 8-29-2018 when Hurricane Sandy was coming and large cities were shutting down leading to a low ridership --20
