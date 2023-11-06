@@ -1,0 +1,12 @@
+---
+title: "project-idea"
+author: "Maddie Drebing"
+format: html
+editor: visual
+---
+
+## Idea
+
+I was thinking of creating a project that will predict how many points (G/A) a player will have by the end of the season or which team will make it to the Stanley Cup playoffs. It will give me a projection basing off their current stats.
+
+I was hoping to use fastRhockey or hockeyR and if neither of those two work I might create my own data set.
