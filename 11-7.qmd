@@ -1,0 +1,12 @@
+---
+title: "11-7"
+format: html
+embed-resources: true
+editor: visual
+---
+
+```{r}
+print(NHL_top_100)
+```
+
+I created a data set of the top 100 NHL players as of 11-7-2023 for the 2023-2024 season.
