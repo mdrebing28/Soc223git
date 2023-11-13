@@ -1,0 +1,189 @@
+---
+title: "HW MD Ch7"
+author: "Maddie Drebing"
+format: html
+embed-resources: true
+editor: visual
+---
+
+## Ch7
+
+```{r}
+#| message: false
+library(tidyverse)
+library(here)
+library(moderndive)
+theme_set(theme_minimal())
+
+nobel_winners <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/nobel_winners.csv")
+```
+
+```{r}
+nobel_winners_flt <- nobel_winners %>% 
+  filter(category != "Peace") %>% 
+  mutate(is_us = if_else(birth_country == "United States of America", 1, 0))
+
+true_prop <- nobel_winners_flt %>% 
+  group_by(is_us) %>% 
+  summarise(prop = n()/nrow(nobel_winners_flt))
+
+ggplot() + 
+  coord_cartesian(xlim = c(0,1), ylim = c(0,1)) + 
+  geom_vline(xintercept = true_prop[2,2][[1]], linetype = "dashed")  + 
+  labs(x = "Proportion")
+```
+
+The true proportion of US-born Nobel Prize winners is 0.306317
+
+```{r}
+set.seed(33)
+# Random sample 
+our_sample <- sample_n(nobel_winners_flt, 
+                       size = 25, 
+                       replace = F)
+
+sample_prop <- our_sample %>% 
+  group_by(is_us) %>% 
+  summarise(prop = n()/nrow(our_sample))
+
+# How does our proportion look like? 
+ggplot() + 
+  coord_cartesian(xlim = c(0,1), ylim = c(0,1)) + 
+  geom_vline(xintercept = true_prop[2,2][[1]], linetype = "dashed")  + 
+  geom_vline(xintercept = sample_prop[2,2][[1]], linetype = "dotted", col = "red") +
+  labs(x = "Proportion")
+```
+
+We would be pretty far off since it is almost at 0.50
+
+## Question 1
+
+The population is the list of Nobel Winners
+
+the sampling frame is `nobel_winners_flt` (scientific nobel winners)
+
+the black line represents the population of Nobel Winners who are US-born
+
+the red line represents the sample proportion
+
+## Question 2
+
+```{r}
+set.seed(33)
+repeated_sample <- rep_sample_n(nobel_winners_flt,
+                                size = 25,
+                                reps = 50)
+```
+
+```{r}
+sample_proportions <- repeated_sample %>%
+  group_by(replicate) %>%
+  summarize(proportion = mean(is_us))
+
+mean_sample_proportion <- mean(sample_proportions$proportion)
+
+ggplot(sample_proportions, aes(x=proportion)) + 
+  coord_cartesian(xlim = c(0,1)) + 
+  geom_histogram(binwidth = 0.05, boundary = 0.4, color = "white") +
+  geom_vline(xintercept = mean(nobel_winners_flt$is_us), linetype = "dashed")  + 
+  geom_vline(xintercept = mean_sample_proportion, linetype = "dotted", col = "red") +
+  labs(x = "Proportion of 25-winner samples that were US-born")
+```
+
+## Question 3
+
+```{r}
+set.seed(33)
+repeated_sample_100 <- rep_sample_n(nobel_winners_flt,
+                                size = 100,
+                                reps = 50)
+```
+
+```{r}
+sample_proportions_100 <- repeated_sample_100 %>%
+  group_by(replicate) %>%
+  summarize(proportion = mean(is_us))
+
+mean_sample_proportion_100 <- mean(sample_proportions_100$proportion)
+
+ggplot(sample_proportions_100, aes(x=proportion)) + 
+  coord_cartesian(xlim = c(0,1)) + 
+  geom_histogram(binwidth = 0.05, boundary = 0.4, color = "white") +
+  geom_vline(xintercept = mean(nobel_winners_flt$is_us), linetype = "dashed")  + 
+  geom_vline(xintercept = mean_sample_proportion_100, linetype = "dotted", col = "red") +
+  labs(x = "Proportion of 100-winner samples that were US-born")
+```
+
+The distribution of the 25 winner sample is much more fluid than the 100 winner sample. A smaller data set will allow many different results over repetitions than a larger one.
+
+## Question 4
+
+```{r}
+std_dev_sample_25 <- sd(sample_proportions$proportion)
+
+std_dev_sample_100 <- sd(sample_proportions_100$proportion)
+
+
+std_dev_sample_25
+std_dev_sample_100
+```
+
+The sd for the 100 winner sample is smaller than the 25 winner by more than double, indicating results are jumbled much closer to the median.
+
+## Question 5
+
+```{r}
+nobel_winners_w <- nobel_winners %>%
+  filter(!is.na(gender))
+
+women_true_prop <- nobel_winners_w %>%
+  group_by(gender) %>% 
+  summarise(prop = n()/nrow(nobel_winners_w))
+```
+
+the true proportion of women winners is 0.05302227
+
+```{r}
+nobel_winners_w <- nobel_winners_w %>% 
+  mutate(is_w = if_else(gender == "Female", 1, 0))
+
+```
+
+```{r}
+ggplot() + 
+  coord_cartesian(xlim = c(0,1), ylim = c(0,1)) + 
+  geom_vline(xintercept = mean(nobel_winners_w$is_w), linetype = "dashed")  + 
+  labs(x = "Proportion")
+```
+
+```{r}
+set.seed(33)
+repeated_sample_w <- rep_sample_n(nobel_winners_w,
+                                size = 100,
+                                reps = 50)
+```
+
+```{r}
+sample_proportions_w <- repeated_sample_w %>%
+  group_by(replicate) %>%
+  summarize(proportion = mean(is_w))
+
+mean_sample_proportion_w <- mean(sample_proportions_w$proportion)
+```
+
+```{r}
+ggplot(sample_proportions_w, aes(x=proportion)) + 
+  coord_cartesian(xlim = c(0,1)) + 
+  geom_histogram(binwidth = 0.02, boundary = 0.4, color = "white") +
+  geom_vline(xintercept = mean(nobel_winners_w$is_w), linetype = "dashed")  + 
+  geom_vline(xintercept = mean(sample_proportions_w$proportion), linetype = "dotted", col = "red") +
+  labs(x = "Proportion of 100-winner samples that were woman-identifying")
+```
+
+it is nearly spot on the the true value calculated
+
+0.0542 to our calculation of 0.05302227
+
+## Question 6
+
+Central Limit Theorem (CLT) is a statistical concept that states when you have a large enough sample size from a population, the distribution of the sample means will be approximately normally distributed.
