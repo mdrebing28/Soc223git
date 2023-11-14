@@ -1,0 +1,196 @@
+---
+title: "11-14-2023"
+format: html
+embed-resources: true
+editor: visual
+---
+
+```{r}
+print(NHL_22_23_stats)
+```
+
+```{r}
+print(pll_player_stats)
+```
+
+```{r}
+library(tidyverse)
+library(infer)
+library(moderndive)
+library(patchwork)
+library(here)
+library(ggplot2movies)
+theme_set(theme_minimal())
+```
+
+```{r}
+set.seed(1234)
+promotions <- promotions |>
+  rename(sex = gender)
+
+promotions  |>
+  sample_n(size = 6) |>
+  head()
+
+```
+
+```{r}
+p1 <- ggplot(promotions,
+             aes(x = sex, 
+                 fill = decision)) +
+  geom_bar() +
+  labs(x = "sex of name on resume") +
+  theme(legend.position = "top")
+
+p1
+```
+
+```{r}
+promotions |>
+  group_by(sex, decision) |>
+  tally()
+  
+```
+
+```{r}
+promotions <- promotions |>
+  mutate(promoted = if_else(decision == "promoted", 1, 0))
+```
+
+```{r}
+promotions |>
+  group_by(sex) |>
+  summarize(mean = mean(promoted))
+```
+
+```{r}
+#prep the data
+promotions_shuffled <- promotions_shuffled |>
+  rename(sex = gender) |>
+  mutate(promoted = if_else(decision == "promoted", 1, 0))
+
+# summary
+promotions_shuffled |>
+  group_by(sex) |>
+  summarize(mean = mean(promoted))
+```
+
+```{r}
+p2 <- ggplot(promotions_shuffled,
+             aes(x = sex, 
+                 fill = decision)) +
+  geom_bar() +
+  labs(x = "sex of name on resume") + 
+  theme(legend.position = "top")
+p1 + p2
+```
+
+```{r}
+observed_diff <- promotions |>
+  specify(promoted ~ sex) |>
+  calculate(stat = "diff in means", 
+            order = c("male", "female"))
+observed_diff
+```
+
+```{r}
+set.seed(12345)
+
+null_distribution <- promotions |>
+  specify(formula = promoted ~ sex) |>
+  hypothesize(null = "independence") |>
+  generate(reps = 1000,
+           type = "permute") |>
+  calculate(stat = "diff in means",
+            order = c("male", "female"))
+null_distribution
+```
+
+```{r}
+visualize(null_distribution,
+          bins = 10)
+```
+
+```{r}
+visualize(null_distribution,
+          bins = 10) +
+  shade_p_value(obs_stat = observed_diff,
+                direction = "both")
+```
+
+e
+
+```{r}
+null_distribution |>
+  get_p_value(obs_stat = observed_diff,
+              direction = "both")
+```
+
+```{r}
+bootstrap_distribution <- promotions |>
+  specify(formula = promoted ~ sex) |>
+  generate(reps = 1000,
+           type = "bootstrap") |>
+  calculate(stat = "diff in means",
+            order = c("male", "female"))
+
+visualize(bootstrap_distribution)
+```
+
+```{r}
+percentile_ci <- bootstrap_distribution |>
+  get_confidence_interval(level = 0.95, type = "percentile")
+percentile_ci
+```
+
+```{r}
+visualize(bootstrap_distribution) +
+  shade_confidence_interval(endpoints = percentile_ci)
+```
+
+```{r}
+movies_sample |>
+  glimpse()
+```
+
+```{r}
+ggplot(data = movies_sample,
+       aes(x = genre, 
+           y = rating)) +
+  geom_jitter(width = .2, alpha = .2) +
+  labs(y = "IMDb rating")
+```
+
+```{r}
+set.seed(12345)
+
+null_distribution <- movies_sample |>
+  specify(formula = rating ~ genre) |>
+  hypothesise(null = "independence") |>
+  generate(reps = 1000,
+           type = "permute") |>
+  calculate(stat = "diff in means",
+            order = c("Action", "Romance"))
+head(null_distribution)
+```
+
+```{r}
+observed_diff <- movies_sample |>
+  specify(formula = rating ~ genre) |>
+  calculate(stat = "diff in means",
+            order = c("Action", "Romance"))
+observed_diff
+```
+
+```{r}
+visualize(null_distribution,
+          bins = 10) +
+  shade_p_value(obs_stat = observed_diff,
+                direction = "both")
+```
+
+```{r}
+null_distribution |>
+  get_p_value(obs_stat = observed_diff,
+              direction = "both")
+```
