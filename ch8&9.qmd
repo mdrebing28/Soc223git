@@ -1,0 +1,177 @@
+---
+title: "MD 8&9"
+author: "Maddie Drebing"
+format: html
+embed-resources: true
+editor: visual
+---
+
+# Ch 8
+
+```{r}
+#| message: false
+library(tidyverse)
+library(here)
+library(moderndive)
+library(infer)
+theme_set(theme_minimal())
+```
+
+## Question 1
+
+```{r}
+set.seed(1108)
+
+poll <- tibble(
+  vote_gop = rbinom(n = 1000,
+                    size = 1,
+                    prob = .53))
+```
+
+```{r}
+set.seed(1108) 
+bootstrap_dist <- poll %>%
+  rep_sample_n(size = nrow(poll), replace = TRUE, reps = 1000) %>%
+  group_by(replicate) %>%
+  summarize(mean_vote = mean(vote_gop))
+
+ci_one_way <- quantile(bootstrap_dist$mean_vote, c(.025, .975))
+print(ci_one_way)
+```
+
+Using the first method I estimated the confidence percentile intervals of 0.483975 and 0.548000
+
+```{r}
+set.seed(1108)  
+ci_second_way <- poll %>%
+  specify(response = vote_gop) %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "mean") %>%
+  get_ci(level = 0.95, type = "percentile")
+
+print(ci_second_way)
+```
+
+The second method I estimated 0.483975 and 0.548
+
+They are both identical intervals. if you set a different seed then the confidence intervals will be different, due to randomly sampling.
+
+## History of Rap
+
+```{r}
+rap_poll <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/polls.csv")
+```
+
+```{r}
+top_songs <- rap_poll %>% 
+  filter(rank == 1)
+```
+
+## Question 2
+
+```{r}
+years <- ggplot(top_songs,
+                aes(x = year)) +
+  geom_histogram(binwidth = 1,
+                 center = 0) +
+  labs(title = "Release Year of Critics' #1 Favorite Rap Songs",
+       x = "Release Year",
+       y = "Number of Songs")
+years
+```
+
+1994 was the year with the most commonly names favorite track int eh critic poll. 14 critics naming their favorite from that year.
+
+## Question 3
+
+```{r}
+set.seed(3)
+boot_d <- top_songs %>% 
+  specify(response = year) %>% 
+  generate(reps = 1000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+```
+
+```{r}
+confidence_interval <- boot_d %>% 
+  get_ci(level = 0.95, type = "percentile")
+print(confidence_interval)
+```
+
+The lower bound is 1993 and the upper bound is 1996
+
+## Question 4
+
+```{r}
+set.seed(3)
+boot_d2 <- rap_poll %>% 
+  rep_sample_n(size = 25, reps = 1000, replace = TRUE) %>% 
+  group_by(replicate) %>% 
+  summarize(mean_year = mean(year))
+
+ci_25 <- quantile(boot_d2$mean_year, c(.025, .975))
+print(ci_25)
+```
+
+I calculated a different confidence interval, lower bound of 1995 and an upper bound of 2002.
+
+# Chapter 9
+
+```{r}
+pl_data <- read_csv("https://raw.githubusercontent.com/vaiseys/dav-course/main/Data/premier_league.csv")
+
+glimpse(pl_data)
+```
+
+## Question 5
+
+```{r}
+home_wins <- pl_data %>% 
+  filter(result == "hw")
+
+home_wins_prop <- nrow(home_wins) / nrow(pl_data)
+
+print(home_wins_prop)
+```
+
+The proportion of home wins in the 15/16 season was 0.4131579 (41%)
+
+## Question 6
+
+```{r}
+set.seed(22)
+
+sampled_proportions <- c()
+
+for (i in 1:1000) {
+  
+  sampled_results <- sample(c("aw", "hw" , "d"), 
+                            size = 380,
+                            replace = TRUE, 
+                            prob = c(1/3,1/3,1/3))
+  prop <- sum(sampled_results == "hw")/380
+  sampled_proportions[i] <- prop
+  
+}
+proportions_df <- data.frame(Proportion = sampled_proportions)
+```
+
+```{r}
+proportions_graph <- ggplot(proportions_df,
+                            aes(x = Proportion)) + 
+  geom_histogram(binwidth = 0.01, boundary = 0.1, color = "white") +
+  labs(title = "Sample Proportions with Equal Probability Results",
+       x = "Proportion",
+       y = "Number of Proportions")
+proportions_graph
+```
+
+This histogram displays a pretty normal distribution, which adds up since we are taking a huge number of samples which by the CLT means that the distribution will get closer and closer to a normal distribution. The proportion in question 5 was much higher than the sample shown in question 6, which makes sense since a home win is more likely than an away win in real life.
+
+## Question 7
+
+In this scenario the null hypothesis would be Home/Away has no relevance, the Home team and Away team win at the same rate. The alternative hypothesis would be that the Home and Away team win at different rates.
+
+## Question 8
+
+In this example p-value is the probability that the proportion of Home wins is just as or more extent than the proportion of Home wins when we assume all three possible results are equally probable. On a graph it would be two shaded portions on the right and left sides of the null distributions of home win proportions.
