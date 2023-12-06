@@ -1,0 +1,256 @@
+---
+title: "Final"
+author: "Maddie Drebing"
+format: html
+editor: visual
+embed-resources: true
+echo: false
+toc: true
+---
+
+# Is there a discernible relationship between the total number of goals and assists in the Premier Lacrosse League (PLL)?
+
+```{r}
+#| echo: false
+#| message: false
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(tibble)
+library(tidyr)
+
+library(readr)
+pll_player_stats <- read_csv("pll-player-stats.csv")
+```
+
+## 1. Introduction
+
+This study aims to best understand the relationship between goals and assists in The PLL (The Premier Lacrosse League). Every one loves watching highlight reel goals but what leads up to that point? This project will dive deeper into the relationship of goals and assists.
+
+To address this question I created a data set from downloading the 2023 PLL season stats off of their website. This data set includes key information including all of the players in the league, their position, team, points, goals, assists, and shots.
+
+## 2. Exploratory Data Analysis
+
+I took the original data set and condensed it to relevant data, it now contains the players information including their: name, position, team, points, goals, and assists. Then I organized the data to show the points in a descending order as well as the maximum, minimum, mean, and median of both goals and assists.
+
+```{r}
+pll_points <- pll_player_stats |>
+  select(`First Name`, `Last Name`, `Position`, `Team`, `Points`, `Total Goals`, `Assists`) 
+```
+
+```{r}
+pll_points_ordered <- pll_points %>%
+  arrange(desc(`Total Goals`), desc(Assists)) 
+
+print(pll_points_ordered)
+```
+
+Summary statistics of maximum, minimum, average, median, and standard deviation of both goals and assists.
+
+```{r}
+summary_data <- pll_points %>% 
+  summarize(
+    max_goals = max(`Total Goals`),
+    min_goals = min(`Total Goals`),
+    mean_goals = mean(`Total Goals`),
+    median_goals = median(`Total Goals`),
+    sd_goals = sd(`Total Goals`),
+    max_assists = max(`Assists`),
+    min_assists = min(`Assists`),
+    mean_assists = mean(`Assists`),
+    median_assists = median(`Assists`),
+    sd_assists = sd(`Assists`)
+  ) |>
+knitr::kable()
+print(summary_data)
+```
+
+The histogram below contains data from everyone in the PLL, this includes attack (A), middies (M), defense (D), long stick middies (LSM), short stick defensive middies (SSDM), face off (FO), and goalies (G). As you can see it is positively skewed since majority of players have not scored over 10 goals.
+
+```{r}
+ggplot(pll_points, 
+       aes(x = `Total Goals`)) +
+  geom_histogram(fill = "blue", 
+                 color = "black", 
+                 bins = 30) +
+  labs(title = "Histogram of Total Goals", 
+       x = "Total Goals", 
+       y = "Frequency")
+```
+
+Similar to Goals this histogram is also positively skewed due to majority of players not having over 5 assists. Looking at both goals and assists, 99 players have zero assists opposed to goals where 85 players are scoreless.
+
+```{r}
+ggplot(pll_points, 
+       aes(x = Assists)) +
+  geom_histogram(fill = "red", 
+                 color = "black", 
+                 bins = 30) +
+  labs(title = "Histogram of Assists", 
+       x = "Assists", 
+       y = "Frequency")
+```
+
+Here you can see we generated a scatter plot to see the overall relationship between Goals and Assists. As the number of assists increase the number of goals do as well. Consistent with the relationship there is a positive correlation coefficient of 0.69.
+
+```{r}
+correlation_coefficient <- cor(pll_points$`Total Goals`, pll_points$Assists)  
+
+cat("Correlation Coefficient:", round(correlation_coefficient, 2))
+```
+
+```{r}
+ggplot(pll_points, 
+       aes(x = `Assists`, 
+           y = `Total Goals`)) +
+  geom_point(aes(color = "Total Goals"), 
+             alpha = 1) +
+  geom_point(aes(color = "Assists"), 
+             alpha = 0.4) +
+  geom_smooth(method = "lm", 
+              se = FALSE, 
+              color = "red") +
+  labs(title = "Scatter Plot of Assists and Total Goals", 
+       x = "Assists", y = "Total Goals",
+       color = "Variable") +
+  annotate("text", x = max(pll_points$`Total Goals`), 
+           y = max(pll_points$Assists),
+           label = paste("Correlation:", 
+                         round(correlation_coefficient, 2)),
+           hjust = 1, vjust = 1, color = "red") +
+  scale_color_manual(values = c("Total Goals" = "blue", "Assists" = "red"))
+```
+
+Finally, the box plot created from our data allows our all-stars to stand out amongst the others. 50% of goals and assists are highlighted in the red and blue boxes, red representing assists and blue representing goals. The horizontal line within the boxes is where the median lies, it is very similar for both. The whiskers extend to the minimum and the maximum values within 1.5 times the IRQ (interquartile range). There are not apparent outliers beyond the whiskers for goals, and there is one apparent outlier for assists.
+
+```{r}
+ggplot(pll_points, 
+       aes(x = factor(1), 
+           y = `Total Goals`, 
+           fill = "Total Goals")) +
+  geom_boxplot(position = position_dodge(width = 0.8), 
+               alpha = 0.7) +
+  geom_boxplot(aes(x = factor(2), 
+                   y = `Assists`, 
+                   fill = "Assists"), 
+               position = position_dodge(width = 0.8), 
+               alpha = 0.7) +
+  labs(title = "Box Plot of Total Goals and Assists", 
+       x = NULL, y = "Value") +
+  scale_x_discrete(labels = c("Total Goals", "Assists")) +
+  scale_fill_manual(values = c("Total Goals" = "blue", "Assists" = "red")) +
+  theme_minimal()
+```
+
+## 3. Multiple Linear Regression
+
+### 3.1 Methods
+
+The components of multiple linear regression model are:
+
+-   Outcome Variable = Total Goals
+
+-   Numerical explanatory variable = Assists
+
+### 3.2 Model Results
+
+Regression table of Total Goals and Assists
+
+```{r}
+reg_model <- lm(`Total Goals` ~ Assists, data = pll_points)
+
+
+summary_table <- summary(reg_model)
+print(summary_table)
+```
+
+### 3.3 Interpreting the Regression Table
+
+The regression equation for Assists is:
+
+Total Goals = Intercept + (Coefficient for Assists) × Assists
+
+Total Goals = 1.76603 + 0.99309 × Assists
+
+-   The intercept (1.76603) is the estimated value of the response variable ("Total Goals") when the predictor variable ("Assists") is zero. In the context of lacrosse, where assists are likely to be positive, the intercept may not have a direct interpretation.
+
+-   The coefficient for Assists is the estimated change in the response variable ("Total Goals") for a one-unit change in the predictor variable ("Assists"). In this context, it suggests that, on average, each additional assist is associated with an increase of approximately 0.99309 in the total number of goals.
+
+### 3.4 Inference for Multiple Regression
+
+Using the multiple regression table I am going to test two null hypotheses. The first one is Assists have no effect on Goals.
+
+H0​: The coefficient for "Assists" (βAssistsβAssists​) is equal to zero, indicating that the number of assists has no effect on the total number of goals.
+
+There is also an alternative:
+
+H1​: The coefficient for "Assists" (βAssistsβAssists​) is not equal to zero, suggesting that the number of assists has a significant effect on the total number of goals.
+
+If the p-value associated with the coefficient for "Assists" is less than the chosen significance level (commonly 0.05), you would reject the null hypothesis. This indicates that there is enough evidence to suggest that the number of assists is a significant predictor of the total number of goals.
+
+The second null hypotheses is:
+
+H0​: All coefficients in the model, including the intercept and the coefficient for "Assists," are equal to zero. This implies that the model, as a whole, has no explanatory power.
+
+The alternative hypothesis is:
+
+H1​: At least one coefficient in the model is different from zero, indicating that the model is statistically significant.
+
+If the p-value associated with the F-statistic for the overall model is less than the chosen significance level, you would reject the null hypothesis. This suggests that there is enough evidence to conclude that the model, which includes the number of assists as a predictor, is statistically significant in predicting the total number of goals.
+
+### 3.5 Residual Analysis
+
+```{r}
+model <- lm(`Total Goals` ~ Assists, data = pll_points)
+
+residuals <- residuals(model)
+
+plot(model$fitted.values, residuals, main = "Residuals vs Fitted Values", xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red", lty = 2)
+
+qqnorm(residuals)
+qqline(residuals)
+
+plot(model$fitted.values, sqrt(abs(residuals)), main = "Scale-Location Plot", xlab = "Fitted Values", ylab = "sqrt(|Residuals|)")
+
+plot(pll_points$Assists, residuals, main = "Residuals vs Assists", xlab = "Assists", ylab = "Residuals")
+
+boxplot(residuals, main = "Box Plot of Residuals", ylab = "Residuals")
+
+```
+
+In the analysis of residuals from a linear regression model predicting total goals based on assists, several systematic patterns can be examined through diagnostic plots. If the residuals exhibit a noticeable curve or pattern in the residuals vs fitted values plot, it suggests potential non-linearity in the relationship between predictors and the response variable. Heteroscedasticity, indicated by a varying spread of residuals across fitted values, violates the assumption of constant variance and may require transformations. Outliers, identified as individual data points significantly deviating from the overall trend, can impact model results and should be investigated for accuracy. Influence points, seen as data points with a strong impact on the model, may require scrutiny for their validity. Residuals showing patterns against predictor variables signal potential non-linear relationships or missing predictor variables. Autocorrelation in time series data, observed as patterns over time in residuals, indicates the need for time series modeling techniques. Addressing these systematic patterns is crucial for refining the model and ensuring its validity and reliability.
+
+## 4. Discussion
+
+### 4.1 Conclusions
+
+The statistical analysis conducted on the PLL data set reveals that the number of assists is statistically significant in predicting the total number of goals in lacrosse games. The regression modeling demonstrates a linear relationship between assists and total goals, with the coefficient for assists being significantly different from zero. This suggests that as the number of assists increases, there is a meaningful and positive impact on the total goals scored. The overall model exhibits statistical significance, indicating its predictive power in explaining the variability in total goals. The analysis of residuals supports the validity of the model assumptions, although continuous monitoring and potential model refinement are recommended to address any systematic patterns or deviations.
+
+The scatter plot and correlation coefficient provide insights into the strength of the relationship between assists and total goals, indicating a positive correlation. While the current model captures a substantial portion of the variability in total goals, it is acknowledged that there may be other factors influencing goal-scoring patterns that are not accounted for in the present analysis. Therefore, future research could explore additional predictors or interactions to enhance the model's explanatory power.
+
+Overall, this project contributes valuable insights into the statistical dynamics of player performance in lacrosse, particularly in the context of assists and total goals. The findings serve as a foundation for understanding the factors influencing goal-scoring patterns in the PLL. Recommendations for future research include exploring game-specific factors, team strategies, and potential outliers to further refine the understanding of player performance in lacrosse.
+
+### 4.2 Limitations
+
+The conclusions drawn from the analysis of the Premier Lacrosse League (PLL) data set are subject to several limitations that warrant consideration. Firstly, the reliability of the findings hinges on the accuracy and completeness of the data set; any inaccuracies, missing data, or recording errors could introduce biases. The analysis, primarily focused on the relationship between assists and total goals, may oversimplify the intricate dynamics of lacrosse games. The linear regression model assumes a linear connection between assists and total goals, potentially overlooking non-linearities or interactions. Contextual factors, such as game situations and opponent strength, are not considered, and their absence may limit the comprehensive understanding of player performance. Unaccounted confounding variables, like player experience or team-specific tactics, may influence the observed relationship. The causal inference is challenging, and establishing causality demands careful consideration of potential confounders. The findings' generalizability is constrained to the PLL data set and may not directly apply to other lacrosse leagues or contexts due to differences in dynamics, player skills, and rules. Temporal considerations also come into play, as shifts in game strategies or rule modifications over time could impact the stability of the observed relationship. Acknowledging these limitations is crucial for interpreting the results accurately, and future research should aim to address these constraints to enhance the depth and applicability of the analysis.
+
+### 4.3 Further Questions
+
+Some questions I came up with are:
+
+-   Are there variations in the relationship between assists and total goals based on player positions? Exploring differences among attackers, midfielders, and defenders could provide insights into positional dynamics.
+
+-   How do team strategies influence the relationship between assists and total goals? Investigating team-specific playing styles, offensive strategies, and the impact of coaching decisions could contribute to a more nuanced understanding.
+
+-   How does the context of the game (e.g., close games, blowouts) affect the relationship between assists and total goals? Analyzing performance in different game situations may reveal variations in player contributions.
+
+-   Has the relationship between assists and total goals evolved over different seasons? Examining temporal trends may uncover changes in playing styles, rule modifications, or shifts in team dynamics.
+
+-   Can player performance be grouped into distinct clusters based on their assist and goal-scoring patterns? Clustering analysis could identify player archetypes and highlight diverse playing styles.
+
+-   Have any rule changes in lacrosse influenced the correlation between assists and total goals? Investigating the impact of rule modifications over time could offer insights into the dynamics of the game.
+
+-   What interactions exist between assists and other player-specific or team-specific variables? Exploring potential interactions may enhance the model's explanatory power.
+
+-   How does the relationship between assists and total goals in lacrosse compare to similar relationships in other sports? Drawing comparisons with other sports may provide broader insights into scoring dynamics.
